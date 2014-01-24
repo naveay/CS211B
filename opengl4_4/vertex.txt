@@ -1,0 +1,67 @@
+#version 330
+ 
+uniform mat4 viewMatrix, projMatrix;
+uniform vec4 axis_i;
+uniform float ang_i;
+uniform float fov;
+uniform float ratio;
+uniform float nearP;
+uniform float farP;
+in vec4 position;
+in vec3 color;
+ 
+out vec3 Color;
+
+//This is just an example.  Don't do this!  It forces the GPU to recalculate the matrix for each vertex.
+//Better to do it once in the CPU.
+mat4 rotationMatrix(vec4 axis, float angle)
+{
+    axis = normalize(axis);
+    float s = sin(angle);
+    float c = cos(angle);
+    float oc = 1.0 - c;
+    
+    return mat4(oc * axis.x * axis.x + c,           oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,  0.0,
+                oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s,  0.0,
+                oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c,           0.0,
+                0.0,                                0.0,                                0.0,                                1.0);
+}
+
+//This is just an example.  Don't do this!  It forces the GPU to recalculate the matrix for each vertex.
+//Better to do it once in the CPU.
+mat4 translationMatrix(vec3 pos)
+{
+    return mat4(1.0, 0.0, 0.0,  0.0,
+                0.0, 1.0, 0.0 ,  0.0,
+                0.0, 0.0, 1.0, 0.0,
+                pos.x, pos.y, pos.z, 1.0);
+}
+mat4 scaleMatrix(vec3 pos)
+{
+    return mat4(pos.x, 0.0, 0.0,  0.0,
+                0.0, pos.y, 0.0 ,  0.0,
+                0.0, 0.0, pos.z, 0.0,
+                0.0, 0.0, 0.0, 1.0);
+}
+mat4 projectMatrix(float fov,float ratio,float nearP,float farP)
+{
+	float a=1.0f / tan (fov * (3.14159265358979323846 / 360.0));
+	return mat4(a/ratio, 0.0, 0.0,  0.0,
+                0.0, a, 0.0 ,  0.0,
+                0.0, 0.0, (farP + nearP) / (nearP - farP), -1.0,
+                0.0, 0.0, (2.0f * farP * nearP) / (nearP - farP), 0.0);
+}
+void main()
+{
+	vec4 axis = vec4(2.0,0.0,0.0,0.0);
+	vec3 pos = vec3(0.0,0.0,0.0);
+    Color = color;
+	// Matrix multiplication is not commutative, i.e. the order of operations matters. 
+	// The transformations on a vertex' position, in order are:
+	// model
+	// view
+	// projection
+
+
+    gl_Position = projectMatrix(fov,ratio,nearP,farP) * viewMatrix *rotationMatrix(axis_i,ang_i)* position ;
+}
